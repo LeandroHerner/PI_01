@@ -1,8 +1,8 @@
 import pandas as pd
 import json
 import ast
-import warnings
-warnings.filterwarnings('ignore')
+#import warnings
+#warnings.filterwarnings('ignore')
 import pyarrow as pa
 import pyarrow.parquet as pq
 from fastapi import FastAPI
