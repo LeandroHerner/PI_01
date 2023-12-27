@@ -12,10 +12,18 @@ from typing import List
 # Se instancia la clase a utilizar
 app = FastAPI()
 
+# Direccion de la API
+# http://127.0.0.1:8000/docs
+
+# Direccion del web service Render
+# https://pi-01-api-lh.onrender.com/docs#/
+
 # Se cargan los archivos parquet a utilizar
 steam_games = pd.read_parquet('datos_parquet/steam_games.parquet')
-users_items = pd.read_parquet('datos_parquet/user_items2.parquet')
+users_items = pd.read_parquet('datos_parquet/user_items_chunk.parquet')
 user_reviews = pd.read_parquet('datos_parquet/user_reviews.parquet')
+user_sim = pd.read_parquet('datos_parquet/user_sim.parquet')
+item_recortado = pd.read_parquet('datos_parquet/item_chunk.parquet')
 
 #### PRIMERA CONSULTA ####
 
@@ -114,10 +122,10 @@ games_UsersRecommend = steam_games[['id', 'title']]
 
 UsersRecommend = pd.merge(user_reviews, games_UsersRecommend, on='id', how='inner')
 
-def obtener_top3_positivo(consulta):
+def obtener_top3_positivo(year):
     
     # filtro por año en primera instancia
-    UsersRecommend_filtrado_anio = UsersRecommend[UsersRecommend['review_year'] == consulta]
+    UsersRecommend_filtrado_anio = UsersRecommend[UsersRecommend['review_year'] == year]
 
     # luego filtro contemplando solo las filas que cumplen con ambos booleanos:
     # ser True en la columna 'recommend' y tener valor 1 o 2 en la columna 'sentiment_analysis'
@@ -138,19 +146,19 @@ def obtener_top3_positivo(consulta):
     #return {"top3": top3Games[['id', 'title', 'recommend']].to_dict(orient='records')}
 
 # Definir la ruta en FastAPI
-@app.get("/UsersRecommend/{consulta}")
-def obtener_top3(consulta: int):
-    resultado = obtener_top3_positivo(consulta)
+@app.get("/UsersRecommend/{year}")
+def obtener_top3(year: int):
+    resultado = obtener_top3_positivo(year)
     return resultado
 
 
 
 #### CUARTA CONSULTA ####
 
-def obtener_top3_negativo(consulta):
+def obtener_top3_negativo(year):
     
     # filtro por año en primera instancia
-    UsersRecommend_filtrado_anio = UsersRecommend[UsersRecommend['review_year'] == consulta]
+    UsersRecommend_filtrado_anio = UsersRecommend[UsersRecommend['review_year'] == year]
 
     # luego filtro contemplando solo las filas que cumplen con ambos booleanos:
     # ser True en la columna 'recommend' y tener valor 1 o 2 en la columna 'sentiment_analysis'
@@ -169,9 +177,9 @@ def obtener_top3_negativo(consulta):
     return resultado
 
 # Definir la ruta en FastAPI
-@app.get("/UsersNotRecommend/{consulta}")
-def obtener_top3(consulta: int):
-    resultado = obtener_top3_negativo(consulta)
+@app.get("/UsersNotRecommend/{year}")
+def obtener_top3(year: int):
+    resultado = obtener_top3_negativo(year)
     return resultado
 
 
@@ -184,7 +192,7 @@ user_sentiment = user_reviews[['id', 'user_id', 'sentiment_analysis' ]]
 sentiment = pd.merge(user_sentiment, games_sentiment, on='id', how='inner')
 
 
-@app.get("/sentiment_analysis/")
+@app.get("/sentiment_analysis/{year}")
 def obtener_sentimiento_analisis_por_año(year: int):
     # Filtrar por año específico
     df_filtrado = sentiment[sentiment['year'] == year]
@@ -208,52 +216,27 @@ def obtener_sentimiento_analisis_por_año(year: int):
 
 #### SEXTA CONSULTA ####
 
-"""
-class InputData(BaseModel):
-    id_juego: str
-
-class OutputData(BaseModel):
-    juegos_recomendados: List[str]
-
-@app.post("/recomendacion_juegos")
-def recomendacion_juegos(input_data: InputData):
-    id_juego = input_data.id_juego
-
-    # Verificar si el ID de juego proporcionado existe en el DataFrame
-    if id_juego not in item_item['item_id'].values:
-        raise HTTPException(status_code=404, detail=f"Error: El ID de juego {id_juego} no se encuentra en el DataFrame.")
-
-    # Obtener el índice del juego en la matriz
-    indice_juego = item_item.index[item_item['item_id'] == id_juego][0]
-
+@app.get("/recomendacion_juego/{item_id}")
+def cinco_recomendaciones2(item_id):
+    item_id=int(item_id)
+    # Se verifica si el ID de juego proporcionado existe en el DataFrame
+    if item_id not in item_recortado['item_id'].values:
+        return f"Error: El ID de juego {item_id} no se encuentra en el DataFrame."
+    
     # Verificar si hay suficientes datos para calcular recomendaciones
-    if len(item_similarity) <= indice_juego:
-        raise HTTPException(status_code=500, detail="Error: No hay suficientes datos para calcular recomendaciones.")
-
-    # Obtener la fila de similitud para el juego dado
-    similitud_juego = item_similarity[indice_juego]
-
-    # Verificar si hay suficientes datos para calcular recomendaciones
-    if len(similitud_juego) == 0:
-        raise HTTPException(status_code=500, detail="Error: No hay suficientes datos para calcular recomendaciones.")
-
-    # Obtener los índices de los juegos más similares (excluyendo el propio juego)
-    juegos_similares_indices = np.argsort(similitud_juego)[::-1][1:6]
-
-    # Obtener los nombres de los juegos más similares
-    juegos_recomendados = item_item.loc[juegos_similares_indices, 'item_name'].tolist()
-
-    # Filtrar juegos repetidos y asegurar que haya exactamente 5 juegos únicos
-    juegos_recomendados = list(set(juegos_recomendados))
-
-    # Si hay menos de 5 juegos únicos, completar con juegos adicionales si es posible
-    while len(juegos_recomendados) < 5:
-        juegos_faltantes = 5 - len(juegos_recomendados)
-        juegos_similares_extra_indices = np.argsort(similitud_juego)[::-1][6:(6 + juegos_faltantes)]
-        juegos_recomendados_extra = item_item.loc[juegos_similares_extra_indices, 'item_name'].tolist()
-        juegos_recomendados.extend(juegos_recomendados_extra)
-
-    # Tomar solo los primeros 5 juegos únicos si hay más de 5 juegos
-    juegos_recomendados = juegos_recomendados[:5]
-
-    return {"juegos_recomendados": juegos_recomendados}"""
+    if len(user_sim) <= item_id:
+        return "Error: No hay suficientes datos para calcular recomendaciones."
+    
+    else:
+            # Obtener el índice del juego en la matriz
+        id_to_name = item_recortado.loc[item_recortado['item_id'] == item_id, 'item_name']
+        
+        item_name = id_to_name.values[0]
+    
+        encabezado = f'Juegos similares a {item_name}:'
+        
+        user_sim_val = user_sim.sort_values(by=item_name, ascending=False).index[1:6]
+        #[i for i in user_sim_val]
+        #for item in user_sim_val:
+        #    encabezado += f'\n-{item}'
+        return encabezado, [i for i in user_sim_val]
