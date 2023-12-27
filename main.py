@@ -14,7 +14,7 @@ app = FastAPI()
 
 # Se cargan los archivos parquet a utilizar
 steam_games = pd.read_parquet('datos_parquet/steam_games.parquet')
-users_items = pd.read_parquet('datos_parquet/user_items.parquet')
+users_items = pd.read_parquet('datos_parquet/user_items2.parquet')
 user_reviews = pd.read_parquet('datos_parquet/user_reviews.parquet')
 
 #### PRIMERA CONSULTA ####
@@ -204,3 +204,56 @@ def obtener_sentimiento_analisis_por_año(year: int):
 
     # Devolver el resultado como un diccionario
     return {"sentiment_analysis": cantidad_sentimientos_nombres}
+
+
+#### SEXTA CONSULTA ####
+
+"""
+class InputData(BaseModel):
+    id_juego: str
+
+class OutputData(BaseModel):
+    juegos_recomendados: List[str]
+
+@app.post("/recomendacion_juegos")
+def recomendacion_juegos(input_data: InputData):
+    id_juego = input_data.id_juego
+
+    # Verificar si el ID de juego proporcionado existe en el DataFrame
+    if id_juego not in item_item['item_id'].values:
+        raise HTTPException(status_code=404, detail=f"Error: El ID de juego {id_juego} no se encuentra en el DataFrame.")
+
+    # Obtener el índice del juego en la matriz
+    indice_juego = item_item.index[item_item['item_id'] == id_juego][0]
+
+    # Verificar si hay suficientes datos para calcular recomendaciones
+    if len(item_similarity) <= indice_juego:
+        raise HTTPException(status_code=500, detail="Error: No hay suficientes datos para calcular recomendaciones.")
+
+    # Obtener la fila de similitud para el juego dado
+    similitud_juego = item_similarity[indice_juego]
+
+    # Verificar si hay suficientes datos para calcular recomendaciones
+    if len(similitud_juego) == 0:
+        raise HTTPException(status_code=500, detail="Error: No hay suficientes datos para calcular recomendaciones.")
+
+    # Obtener los índices de los juegos más similares (excluyendo el propio juego)
+    juegos_similares_indices = np.argsort(similitud_juego)[::-1][1:6]
+
+    # Obtener los nombres de los juegos más similares
+    juegos_recomendados = item_item.loc[juegos_similares_indices, 'item_name'].tolist()
+
+    # Filtrar juegos repetidos y asegurar que haya exactamente 5 juegos únicos
+    juegos_recomendados = list(set(juegos_recomendados))
+
+    # Si hay menos de 5 juegos únicos, completar con juegos adicionales si es posible
+    while len(juegos_recomendados) < 5:
+        juegos_faltantes = 5 - len(juegos_recomendados)
+        juegos_similares_extra_indices = np.argsort(similitud_juego)[::-1][6:(6 + juegos_faltantes)]
+        juegos_recomendados_extra = item_item.loc[juegos_similares_extra_indices, 'item_name'].tolist()
+        juegos_recomendados.extend(juegos_recomendados_extra)
+
+    # Tomar solo los primeros 5 juegos únicos si hay más de 5 juegos
+    juegos_recomendados = juegos_recomendados[:5]
+
+    return {"juegos_recomendados": juegos_recomendados}"""
