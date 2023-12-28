@@ -4,6 +4,8 @@
 # Ignorar carpeta de archivos json pesados.
 datos_json/
 
+csv_limpios/
+
 json_a_csv/
 
 dataframe_para_Api.ipynb
