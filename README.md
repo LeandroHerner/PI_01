@@ -28,7 +28,7 @@ Una vez finalizado el EDA, se paso a resolver los endpoints propuestos para el M
 
 - **PlayTimeGenre:** Esta función debe devolver el usuario que acumula la mayor cantidad de horas jugadas para el genero proporcionado como input.
 
-- **UserForGenre:** Esta función debe devolver el usuario que acumula mayor cantidad de horas jugadas para el año proporcionado como input.
+- **UserForGenre:** Esta función debe devolver el usuario que acumula mayor cantidad de horas jugadas para el genero proporcionado como input.
 
 - **UsersRecommend:** Esta función debe devolver los 3 juegos **más** recomendados por usuarios para el año proporcionado como input.
 
