@@ -63,7 +63,7 @@ def PlayTimeGenre(consulta : str):
             año_max_horas = resultados.loc[resultados['playtime_forever'].idxmax()]
 
             # Devuelve el resultado como un diccionario
-            return {"genero": consulta, "año_max_horas": {"año": int(año_max_horas['year'])}}
+            return {"genero": consulta, "año": int(año_max_horas['year'])}
         else:
             return {"mensaje": f"No hay datos disponibles para el género {consulta} en ningún año."}
     else:
